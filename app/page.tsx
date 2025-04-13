@@ -12,7 +12,7 @@ export default async function Home() {
       <AuthButtons />
       <div>
         {!session ? (
-          <p>No session</p>
+          <p>No session. Not authenticated.</p>
         ) : (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">
