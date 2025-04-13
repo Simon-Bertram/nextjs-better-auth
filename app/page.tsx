@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { AuthButtons } from "@/app/components/auth-buttons";
+import SignOut from "@/app/signout";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -10,6 +11,7 @@ export default async function Home() {
   return (
     <main className="flex flex-col items-center justify-center h-screen">
       <AuthButtons />
+      <SignOut />
       <div>
         {!session ? (
           <p>No session. Not authenticated.</p>
