@@ -12,12 +12,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Icons } from "../../components/icons";
 import Link from "next/link";
 import { Resolver } from "react-hook-form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -32,6 +33,7 @@ type SignInFormValues = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema) as Resolver<SignInFormValues>,
@@ -44,11 +46,14 @@ export function SignInForm() {
 
   async function onSubmit(data: SignInFormValues) {
     setIsLoading(true);
+    setError(null);
+
     try {
       // TODO: Implement your sign in logic here
       console.log(data);
     } catch (error) {
       console.error(error);
+      setError("Invalid email or password. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -63,8 +68,23 @@ export function SignInForm() {
         </p>
       </div>
 
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-4"
+          aria-describedby="form-description"
+        >
+          <FormDescription className="sr-only">
+            Sign in form with fields for email and password. Email and password
+            are required.
+          </FormDescription>
+
           <FormField
             control={form.control}
             name="email"
@@ -77,6 +97,7 @@ export function SignInForm() {
                     type="email"
                     disabled={isLoading}
                     {...field}
+                    aria-required="true"
                   />
                 </FormControl>
                 <FormMessage />
@@ -96,6 +117,7 @@ export function SignInForm() {
                     type="password"
                     disabled={isLoading}
                     {...field}
+                    aria-required="true"
                   />
                 </FormControl>
                 <FormMessage />
@@ -104,27 +126,8 @@ export function SignInForm() {
           />
 
           <div className="flex items-center justify-between">
-            <FormField
-              control={form.control}
-              name="rememberMe"
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-2 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormLabel className="text-sm font-normal">
-                    Remember me
-                  </FormLabel>
-                </FormItem>
-              )}
-            />
-
             <Link
-              href="/forgot-password"
+              href="/auth/forgot-password"
               className="text-sm text-primary hover:underline"
             >
               Forgot password?
@@ -147,7 +150,7 @@ export function SignInForm() {
 
       <div className="text-center text-sm">
         Don&apos;t have an account?{" "}
-        <Link href="/sign-up" className="text-primary hover:underline">
+        <Link href="/auth/sign-up" className="text-primary hover:underline">
           Sign up
         </Link>
       </div>
