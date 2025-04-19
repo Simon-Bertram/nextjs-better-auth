@@ -19,6 +19,8 @@ import { Icons } from "../../components/icons";
 import Link from "next/link";
 import { Resolver } from "react-hook-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 
 const signUpSchema = z
   .object({
@@ -45,7 +47,7 @@ export function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
+  const [formDisabled, setFormDisabled] = useState(false);
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema) as Resolver<SignUpFormValues>,
     defaultValues: {
@@ -56,30 +58,64 @@ export function SignUpForm() {
     },
   });
 
+  const router = useRouter();
+
   async function onSubmit(data: SignUpFormValues) {
     setIsLoading(true);
     setError(null);
 
-    try {
-      // TODO: Implement your sign up logic here
-      console.log(data);
+    const { error } = await authClient.signUp.email(
+      {
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        callbackURL: "/auth/sign-in",
+      },
+      {
+        // Called when the request starts
+        onRequest: () => {
+          // Best practices:
+          // 1. Show loading state
+          setIsLoading(true);
+          // 2. Clear any previous errors
+          setError(null);
+          // 3. Disable form inputs
+          setFormDisabled(true);
+        },
+        // Called when the request succeeds
+        onSuccess: () => {
+          // Best practices:
+          // 1. Show success message
+          setSuccess(true);
+          // 2. Reset form
+          form.reset();
+          // 3. Clear loading state
+          setIsLoading(false);
+          // 4. Handle redirects
+          router.push("/dashboard");
+        },
+        // Called when the request fails
+        onError: (ctx) => {
+          // Best practices:
+          // 1. Display error message
+          setError(ctx.error.message);
+          // 2. Clear loading state
+          setIsLoading(false);
+          // 3. Re-enable form
+          setFormDisabled(false);
+          // 4. Log error for debugging
+          console.error("Sign-up error:", ctx.error);
+        },
+      }
+    );
 
-      // Simulate successful sign-up
-      setSuccess(true);
-
-      // Reset form after successful submission
-      form.reset();
-
-      // Redirect after a short delay (in a real app, you'd handle this with Next.js router)
-      setTimeout(() => {
-        // window.location.href = '/auth/sign-in'
-      }, 2000);
-    } catch (error) {
-      console.error(error);
-      setError("An error occurred during sign-up. Please try again.");
-    } finally {
-      setIsLoading(false);
+    if (error) {
+      setError(
+        error.message || "An error occurred during sign-up. Please try again."
+      );
     }
+
+    setIsLoading(false);
   }
 
   return (
@@ -125,7 +161,7 @@ export function SignUpForm() {
                 <FormControl>
                   <Input
                     placeholder="John Doe"
-                    disabled={isLoading}
+                    disabled={formDisabled}
                     {...field}
                     aria-required="true"
                   />
@@ -145,7 +181,7 @@ export function SignUpForm() {
                   <Input
                     placeholder="name@example.com"
                     type="email"
-                    disabled={isLoading}
+                    disabled={formDisabled}
                     {...field}
                     aria-required="true"
                   />
@@ -165,7 +201,7 @@ export function SignUpForm() {
                   <Input
                     placeholder="Create a password"
                     type="password"
-                    disabled={isLoading}
+                    disabled={formDisabled}
                     {...field}
                     aria-required="true"
                   />
@@ -189,7 +225,7 @@ export function SignUpForm() {
                   <Input
                     placeholder="Confirm your password"
                     type="password"
-                    disabled={isLoading}
+                    disabled={formDisabled}
                     {...field}
                     aria-required="true"
                   />
@@ -202,7 +238,7 @@ export function SignUpForm() {
           <Button
             type="submit"
             className="w-full"
-            disabled={isLoading}
+            disabled={formDisabled}
             aria-label="Sign up"
           >
             {isLoading && (

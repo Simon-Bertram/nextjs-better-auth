@@ -19,6 +19,8 @@ import { Icons } from "../../components/icons";
 import Link from "next/link";
 import { Resolver } from "react-hook-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "@/server/auth";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -34,6 +36,7 @@ type SignInFormValues = z.infer<typeof signInSchema>;
 export function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema) as Resolver<SignInFormValues>,
@@ -49,11 +52,23 @@ export function SignInForm() {
     setError(null);
 
     try {
-      // TODO: Implement your sign in logic here
-      console.log(data);
+      const result = await signInWithEmailAndPassword(
+        data.email,
+        data.password
+      );
+
+      if (result.success) {
+        // Redirect to dashboard or home page after successful sign-in
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        setError(
+          result.error || "Invalid email or password. Please try again."
+        );
+      }
     } catch (error) {
       console.error(error);
-      setError("Invalid email or password. Please try again.");
+      setError("An error occurred during sign-in. Please try again.");
     } finally {
       setIsLoading(false);
     }
